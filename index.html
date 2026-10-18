@@ -1,0 +1,174 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+    <meta name="theme-color" content="#03060c" />
+    <title>Helios Station — Kepler Reach</title>
+    <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Ccircle cx='32' cy='32' r='9' fill='%23ffbd73'/%3E%3Cellipse cx='32' cy='32' rx='26' ry='11' fill='none' stroke='%2374d9ff' stroke-width='2' transform='rotate(-28 32 32)'/%3E%3C/svg%3E" />
+  </head>
+  <body>
+    <div id="app">
+      <canvas id="scene" aria-label="Interactive 3D simulation of Helios orbital station"></canvas>
+
+      <div class="hud" id="hud">
+        <header class="topbar">
+          <div class="brand">
+            <div class="brand-mark" aria-hidden="true">
+              <svg viewBox="0 0 48 48" fill="none">
+                <circle cx="24" cy="24" r="5.2" fill="#ffc27e"/>
+                <circle cx="24" cy="24" r="9.6" stroke="rgba(255,194,126,.28)" stroke-width=".8"/>
+                <ellipse cx="24" cy="24" rx="19" ry="7.5" stroke="#7edcff" stroke-width="1" transform="rotate(-28 24 24)"/>
+                <ellipse cx="24" cy="24" rx="19" ry="7.5" stroke="rgba(126,220,255,.28)" stroke-width=".7" transform="rotate(42 24 24)"/>
+                <circle cx="39.6" cy="14.2" r="1.5" fill="#7edcff"/>
+              </svg>
+            </div>
+            <div class="brand-copy">
+              <div class="eyebrow">Meridian Orbital Authority</div>
+              <div class="title-row">
+                <h1>Helios Station</h1>
+                <span class="live"><i></i>Live</span>
+              </div>
+              <div class="subline">Kepler Reach <span>·</span> HD 40307 <span>·</span> Cycle 2388.114</div>
+            </div>
+          </div>
+
+          <div class="top-tools">
+            <div class="clock-chip" aria-live="off">
+              <span class="eyebrow">Station time</span>
+              <strong id="sim-clock">14:32:08</strong>
+              <span class="utc">UTC +00</span>
+            </div>
+
+            <div class="toolbar panel">
+              <button class="icon-btn" id="pauseBtn" title="Pause simulation (Space)" aria-label="Pause simulation">
+                <svg class="pause-icon" viewBox="0 0 20 20"><rect x="5" y="4" width="3.2" height="12" rx="1"/><rect x="11.8" y="4" width="3.2" height="12" rx="1"/></svg>
+                <svg class="play-icon" viewBox="0 0 20 20"><path d="M6 4.2v11.6L16 10z"/></svg>
+              </button>
+              <div class="tool-sep"></div>
+              <div class="segmented" id="speedGroup" aria-label="Simulation speed">
+                <button data-speed="1" class="active">1×</button>
+                <button data-speed="2">2×</button>
+                <button data-speed="4">4×</button>
+              </div>
+              <div class="tool-sep"></div>
+              <button class="tool-btn" id="densityBtn" title="Traffic density">
+                <svg viewBox="0 0 20 20"><path d="M3 15.5h14M5 12h10M7 8.5h6M9 5h2"/></svg>
+                <span class="tool-label">Traffic</span>
+                <b id="densityLabel">Med</b>
+              </button>
+              <button class="tool-btn" id="routesBtn" title="Toggle route overlay (R)">
+                <svg viewBox="0 0 20 20"><circle cx="5" cy="14.5" r="1.8"/><circle cx="15" cy="5.5" r="1.8"/><path d="M6.4 13.2c2.4-1.6 1.3-4.4 3.4-5.5 1.5-.8 2.7-.2 3.6-1.2" stroke-dasharray="2.4 2.4"/></svg>
+                <span class="tool-label">Routes</span>
+              </button>
+              <div class="tool-sep"></div>
+              <button class="icon-btn" id="cinemaBtn" title="Cinematic mode (C)" aria-label="Enter cinematic mode">
+                <svg viewBox="0 0 20 20"><rect x="2.5" y="5" width="15" height="10" rx="2"/><path d="M8 7.5v5l4-2.5z"/></svg>
+              </button>
+            </div>
+          </div>
+        </header>
+
+        <div class="left-rail">
+          <section class="vessel-panel panel" id="vesselPanel" aria-live="polite">
+            <div class="panel-glow"></div>
+            <div class="vessel-head">
+              <div class="vessel-kicker" id="vesselClass">Unregistered contact</div>
+              <button class="close-btn" id="closeVessel" title="Release follow camera" aria-label="Close vessel panel">
+                <svg viewBox="0 0 16 16"><path d="M4 4l8 8M12 4l-8 8"/></svg>
+              </button>
+              <h2 id="vesselName">Unidentified Vessel</h2>
+              <div class="vessel-task"><span class="task-pip"></span><span id="vesselTask">Maintaining silent running</span></div>
+            </div>
+            <div class="vessel-dest">
+              <div>
+                <span class="label">Destination</span>
+                <strong id="vesselDest">—</strong>
+              </div>
+              <div class="dest-icon" id="destIcon">
+                <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="6.4"/><circle cx="12" cy="12" r="1.4" fill="currentColor"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/></svg>
+              </div>
+            </div>
+            <div class="vessel-metrics">
+              <div><span>Velocity</span><b id="vesselSpeed">0 <small>m/s</small></b></div>
+              <div><span>Registry</span><b id="vesselReg">UNK-000</b></div>
+              <div><span>ETA</span><b id="vesselEta">—</b></div>
+            </div>
+            <div class="mission-progress">
+              <div class="progress-label"><span id="vesselPhase">APPROACH</span><span id="vesselProgressLabel">42%</span></div>
+              <div class="progress-track"><i id="vesselProgress"></i></div>
+            </div>
+            <div class="vessel-foot">
+              <span class="follow-state"><i></i><span id="followText">Follow camera locked</span></span>
+              <button class="text-btn" id="releaseFollow">Release</button>
+            </div>
+          </section>
+
+          <section class="ops-panel panel" id="opsPanel">
+            <div class="ops-title"><span class="eyebrow">Station operations</span><span class="pulse-dot"></span></div>
+            <div class="ops-row"><span>Active vessels</span><b id="statActive">—</b></div>
+            <div class="ops-row"><span>Dock occupancy</span><b id="statDocks">—</b></div>
+            <div class="ops-row"><span>Mining operations</span><b id="statMining">—</b></div>
+            <div class="ops-mini"><div class="mini-bars" id="trafficBars"></div><span id="statTraffic">Traffic nominal</span></div>
+          </section>
+        </div>
+
+        <div class="view-switcher panel" id="viewSwitcher" aria-label="Camera view">
+          <span class="view-label">View</span>
+          <button data-view="overview" class="active"><span>Overview</span></button>
+          <button data-view="station"><span>Station</span></button>
+          <button data-view="follow" disabled><span>Follow vessel</span></button>
+        </div>
+
+        <div class="bottom-right">
+          <div class="route-legend panel" id="routeLegend">
+            <span><i class="lg freight"></i>Freight</span>
+            <span><i class="lg courier"></i>Courier</span>
+            <span><i class="lg miner"></i>Mining</span>
+            <span><i class="lg patrol"></i>Patrol</span>
+            <span><i class="lg capital"></i>Capital</span>
+          </div>
+          <div class="hint" id="hint">
+            <span><b>Drag</b> orbit</span>
+            <span><b>Scroll</b> zoom</span>
+            <span><b>Select</b> follow a vessel</span>
+          </div>
+          <div class="telemetry" id="telemetry">SIM <b id="fps">60</b> FPS <span>·</span> 41 VESSELS <span>·</span> HD 40307</div>
+        </div>
+
+        <div class="selection-toast" id="toast"></div>
+
+        <div class="cinema-bar" id="cinemaBar">
+          <span class="cinema-label"><i></i>Cinematic sequence</span>
+          <span class="cinema-shot" id="cinemaShot">Helios approach</span>
+          <button id="exitCinema" class="text-btn">Exit <kbd>C</kbd></button>
+        </div>
+
+        <div class="loading" id="loading">
+          <div class="loading-inner">
+            <div class="loading-mark">
+              <svg viewBox="0 0 120 120" fill="none">
+                <circle cx="60" cy="60" r="8" fill="#ffc27e"/>
+                <circle cx="60" cy="60" r="26" stroke="rgba(255,194,126,.22)" stroke-width=".8"/>
+                <ellipse cx="60" cy="60" rx="48" ry="18" stroke="#7edcff" stroke-width="1" transform="rotate(-28 60 60)"/>
+                <circle cx="99" cy="36" r="2.7" fill="#7edcff"/>
+              </svg>
+            </div>
+            <div class="loading-title">Helios Station</div>
+            <div class="loading-sub">Synchronizing orbital traffic network</div>
+            <div class="loading-track"><i id="loadingBar"></i></div>
+            <div class="loading-meta"><span id="loadingPhase">Generating planetary survey</span><span>MERIDIAN OPA</span></div>
+          </div>
+        </div>
+
+        <div class="grain"></div>
+      </div>
+
+      <div class="hover-label" id="hoverLabel">
+        <b id="hoverName">Vessel</b>
+        <span id="hoverClass">Class</span>
+      </div>
+    </div>
+    <script type="module" src="/src/main.js"></script>
+  </body>
+</html>
